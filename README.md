@@ -62,9 +62,9 @@ Reduce(initial T, t T, fn F) (T, error)
 
     // FilterNot
     res, _ := FilterNot(T{td.in}, F{func(p point) bool {
-		return (p.x % 2 == 0)
-	}})
-
+        return (p.x % 2 == 0)
+    }})
+    
     result := res.I.([]point)
     
 
@@ -100,8 +100,8 @@ Reduce(initial T, t T, fn F) (T, error)
 
     // Reduce
     res, _ := Reduce(T{point{0,0}}, T{td}, F{func(acc point, p point) point {
-		return point{acc.x + p.x, acc.y + p.y}
-	}})
-
-	result := res.I.(point)
+        return point{acc.x + p.x, acc.y + p.y}
+    }})
+    
+    result := res.I.(point)
 ```  
