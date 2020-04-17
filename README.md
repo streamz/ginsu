@@ -1,9 +1,7 @@
 # ginsu
-higher order functions for working with slices in golang
+The ginsu library provides higher order functions for slices.
 
 Unfortunately golang does not support generics :(
-
-The ginsu library provides higher order functions for slices.
 
 Any type of slice can be wrapped in type T
 
