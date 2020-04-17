@@ -107,8 +107,7 @@ func assertfn(t reflect.Type) bool {
 
 func (fn F) assert(r _R) bool {
 	ft := reflect.ValueOf(fn.I).Type()
-	return (
-		assertfn(ft) &&
+	return (assertfn(ft) &&
 		assertIn(ft, r.I) &&
 		assertOut(ft, r.O))
 }
@@ -137,7 +136,7 @@ func (t T) compare(other T, fn F) (bool, error) {
 		p[0] = this.Index(i)
 		p[1] = that.Index(i)
 		if !f.Call(p[:])[0].Bool() {
-			return false, nil 
+			return false, nil
 		}
 	}
 
@@ -231,7 +230,7 @@ func (t T) fmap(fn F) (T, error) {
 		p[0] = this.Index(i)
 		o = reflect.Append(o, f.Call(p[:])[0])
 	}
-	
+
 	return T{o.Interface()}, nil
 }
 

@@ -1,4 +1,4 @@
-package ginsu 
+package ginsu
 
 // Copyright 2020 streamz
 //
@@ -31,8 +31,8 @@ func TestCompare(t *testing.T) {
 	td := struct {
 		in, expect []point
 	}{
-		[]point{{1, 1}, {2, 2}, {3, 3},{4, 4}},
-		[]point{{1, 1}, {2, 2}, {3, 3},{4, 4}},
+		[]point{{1, 1}, {2, 2}, {3, 3}, {4, 4}},
+		[]point{{1, 1}, {2, 2}, {3, 3}, {4, 4}},
 	}
 
 	ok, err := Compare(T{td.in}, T{td.expect}, F{func(p0 point, p1 point) bool {
@@ -48,8 +48,8 @@ func TestCompareNot(t *testing.T) {
 	td := struct {
 		in, expect []point
 	}{
-		[]point{{1, 1}, {2, 2}, {3, 3},{4, 4}},
-		[]point{{2, 2}, {4, 4}, {6, 6},{8, 8}},
+		[]point{{1, 1}, {2, 2}, {3, 3}, {4, 4}},
+		[]point{{2, 2}, {4, 4}, {6, 6}, {8, 8}},
 	}
 
 	ok, err := Compare(T{td.in}, T{td.expect}, F{func(p0 point, p1 point) bool {
@@ -65,7 +65,7 @@ func TestCompareNotLength(t *testing.T) {
 	td := struct {
 		in, expect []point
 	}{
-		[]point{{1, 1}, {2, 2}, {3, 3},{4, 4}},
+		[]point{{1, 1}, {2, 2}, {3, 3}, {4, 4}},
 		[]point{{1, 1}, {2, 2}, {3, 3}},
 	}
 
@@ -82,12 +82,12 @@ func TestFilter(t *testing.T) {
 	td := struct {
 		in, expect []point
 	}{
-		[]point{{1, 1}, {2, 2}, {3, 3},{4, 4}},
+		[]point{{1, 1}, {2, 2}, {3, 3}, {4, 4}},
 		[]point{{2, 2}, {4, 4}},
 	}
-	
+
 	res, _ := Filter(T{td.in}, F{func(p point) bool {
-		return (p.x % 2 == 0)
+		return (p.x%2 == 0)
 	}})
 
 	rs := res.I.([]point)
@@ -104,12 +104,12 @@ func TestFilterNot(t *testing.T) {
 	td := struct {
 		in, expect []point
 	}{
-		[]point{{1, 1}, {2, 2}, {3, 3},{4, 4}},
+		[]point{{1, 1}, {2, 2}, {3, 3}, {4, 4}},
 		[]point{{1, 1}, {3, 3}},
 	}
 
 	res, _ := FilterNot(T{td.in}, F{func(p point) bool {
-		return (p.x % 2 == 0)
+		return (p.x%2 == 0)
 	}})
 
 	rs := res.I.([]point)
@@ -123,36 +123,36 @@ func TestFilterNot(t *testing.T) {
 }
 
 func TestForAll(t *testing.T) {
-	td := []point{{1, 1}, {2, 2}, {3, 3},{4, 4}}
+	td := []point{{1, 1}, {2, 2}, {3, 3}, {4, 4}}
 
 	ok, err := ForAll(T{td}, F{func(p point) bool {
 		return (p.x == p.y)
 	}})
-	
+
 	if !ok {
 		t.Errorf(err.Error())
 	}
 }
 
 func TestFailForAll(t *testing.T) {
-	td := []point{{1, 2}, {2, 2}, {3, 3},{4, 4}}
+	td := []point{{1, 2}, {2, 2}, {3, 3}, {4, 4}}
 
 	ok, err := ForAll(T{td}, F{func(p point) bool {
 		return (p.x == p.y)
 	}})
-	
+
 	if ok {
 		t.Errorf(err.Error())
 	}
 }
 
 func TestForAny(t *testing.T) {
-	td := []point{{1, 1}, {2, 2}, {3, 3},{4, 4}}
+	td := []point{{1, 1}, {2, 2}, {3, 3}, {4, 4}}
 
 	ok, err := ForAny(T{td}, F{func(p point) bool {
 		return (p == point{2, 2})
 	}})
-	
+
 	if !ok {
 		t.Errorf(err.Error())
 	}
@@ -162,28 +162,28 @@ func TestForEach(t *testing.T) {
 	td := struct {
 		in, expect []point
 	}{
-		[]point{{1, 1}, {2, 2}, {3, 3},{4, 4}},
-		[]point{{2, 2}, {4, 4}, {6, 6},{8, 8}},
+		[]point{{1, 1}, {2, 2}, {3, 3}, {4, 4}},
+		[]point{{2, 2}, {4, 4}, {6, 6}, {8, 8}},
 	}
 
 	res := make([]point, 0, len(td.expect))
-	
+
 	ForEach(T{td.in}, F{func(p point) {
-		res = append(res, point{p.x*2, p.y*2})
+		res = append(res, point{p.x * 2, p.y * 2})
 	}})
-	
+
 	ok, err := Compare(T{res}, T{td.expect}, F{func(p0 point, p1 point) bool {
 		return p0 == p1
 	}})
 
 	if !ok {
 		t.Errorf(err.Error())
-	}	
+	}
 }
 
 func TestMap(t *testing.T) {
 	e := errors.New("TestMap Failed")
-	in := []point{{1, 1}, {2, 2}, {3, 3},{4, 4}}
+	in := []point{{1, 1}, {2, 2}, {3, 3}, {4, 4}}
 	expect := []line{
 		{in[0], point{10, 10}},
 		{in[1], point{20, 20}},
@@ -192,7 +192,7 @@ func TestMap(t *testing.T) {
 	}
 
 	r, _ := Map(T{in}, F{func(p point) line {
-		return line{p, point{p.x*10, p.y*10}}
+		return line{p, point{p.x * 10, p.y * 10}}
 	}})
 
 	res := r.I.([]line)
@@ -212,10 +212,10 @@ func TestMap(t *testing.T) {
 
 func TestReduce(t *testing.T) {
 	err := errors.New("TestReduce Failed")
-	td := []point{{1, 1}, {2, 2}, {3, 3},{4, 4}}
+	td := []point{{1, 1}, {2, 2}, {3, 3}, {4, 4}}
 	expect := point{10, 10}
 
-	res, _ := Reduce(T{point{0,0}}, T{td}, F{func(acc point, p point) point {
+	res, _ := Reduce(T{point{0, 0}}, T{td}, F{func(acc point, p point) point {
 		return point{acc.x + p.x, acc.y + p.y}
 	}})
 
@@ -232,7 +232,7 @@ func TestAllBadSlice(t *testing.T) {
 	ok, err := Compare(T{td}, T{td}, F{func(p0 point, p1 point) bool {
 		return p0 == p1
 	}})
-	
+
 	if ok {
 		t.Errorf(err.Error())
 	}
@@ -240,13 +240,13 @@ func TestAllBadSlice(t *testing.T) {
 	ok, err = ForAll(T{td}, F{func(p point) bool {
 		return (p.x == p.y)
 	}})
-	
+
 	if ok {
 		t.Errorf(err.Error())
 	}
 
 	okT, errT := Filter(T{td}, F{func(p point) bool {
-		return (p.x % 2 == 0)
+		return (p.x%2 == 0)
 	}})
 
 	if okT.I != nil {
@@ -254,14 +254,14 @@ func TestAllBadSlice(t *testing.T) {
 	}
 
 	okT, errT = Map(T{td}, F{func(p point) line {
-		return line{p, point{p.x*10, p.y*10}}
+		return line{p, point{p.x * 10, p.y * 10}}
 	}})
 
 	if okT.I != nil {
 		t.Errorf(errT.Error())
 	}
 
-	okT, errT = Reduce(T{point{0,0}}, T{td}, F{func(acc point, p point) point {
+	okT, errT = Reduce(T{point{0, 0}}, T{td}, F{func(acc point, p point) point {
 		return point{acc.x + p.x, acc.y + p.y}
 	}})
 
@@ -275,8 +275,8 @@ func TestAllBadFn(t *testing.T) {
 	td := struct {
 		in, expect []point
 	}{
-		[]point{{1, 1}, {2, 2}, {3, 3},{4, 4}},
-		[]point{{1, 1}, {2, 2}, {3, 3},{4, 4}},
+		[]point{{1, 1}, {2, 2}, {3, 3}, {4, 4}},
+		[]point{{1, 1}, {2, 2}, {3, 3}, {4, 4}},
 	}
 
 	ok, err := Compare(T{td.in}, T{td.expect}, F{func(i0, i1 int) bool {
@@ -298,7 +298,7 @@ func TestAllBadFn(t *testing.T) {
 	ok, err = ForAll(T{td.in}, F{func(p point) int {
 		return 0
 	}})
-	
+
 	if ok {
 		t.Errorf(err.Error())
 	}
@@ -335,6 +335,3 @@ func TestAllBadFn(t *testing.T) {
 		t.Errorf(e.Error())
 	}
 }
-
-
-
