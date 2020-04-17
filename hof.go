@@ -22,11 +22,22 @@ import (
 )
 
 // F container for a function
+//
+// Used to wrap a func variable or literal:
+// 		F{func(p point) bool {
+//			return (p.x == p.y)
+//		}}
 type F struct {
 	I interface{}
 }
 
 // T container for a type
+//
+// Used to wrap any builtin or user type:
+// 		T{[]int{1, 2, 3}}
+// To extract the value out of the container apply the appropriate type assertion:
+// 		t := T{[]int{1, 2, 3}}
+// 		i := t.I.([]int)
 type T struct {
 	I interface{}
 }
@@ -41,41 +52,78 @@ var rstbool = _R{reflect.Struct, reflect.Bool}
 var struct2 = []reflect.Kind{reflect.Struct, reflect.Struct}
 
 // Compare T Generic
+// Compare two type T by applying a binary function:
+// 		Compare(T{[]int{1, 2, 3}}, T{[]int{1, 2, 3}}, F{func(i0 int, i1 int) bool {
+//				return i0 == i1
+//		}})
+// returns true|false|runtime error
 func Compare(this T, that T, fn F) (bool, error) {
 	return this.compare(that, fn)
 }
 
 // Filter T Generic
+// Filter a slice by items that match the given predicate:
+// 		Filter(T{[]int{1, 2, 3}}, F{func(i int) bool {
+//				return i % 2 == 0
+//		}})
+// returns T{[]int} | runtime error
 func Filter(t T, fn F) (T, error) {
 	return t.filter(fn, false)
 }
 
 // FilterNot T Generic
+// Filter a slice by items that do NOT match the given predicate:
+// 		FilterNot(T{[]int{1, 2, 3}}, F{func(i int) bool {
+//				return i % 2 == 0
+//		}})
+// returns T{[]int} | runtime error
 func FilterNot(t T, fn F) (T, error) {
 	return t.filter(fn, true)
 }
 
 // ForAll T Generic
+// Return true if ALL items match the given predicate:
+// 		ForAll(T{[]int{1, 2, 3}}, F{func(i int) bool {
+//				return i < 10
+//		}})
+// returns true|false|runtime error
 func ForAll(t T, fn F) (bool, error) {
 	return t.foranyall(fn, true)
 }
 
 // ForAny T Generic
+// Return true if ANY item match the given predicate:
+// 		ForAny(T{[]int{1, 2, 3}}, F{func(i int) bool {
+//				return i == 2
+//		}})
+// returns true|false|runtime error
 func ForAny(t T, fn F) (bool, error) {
 	return t.foranyall(fn, false)
 }
 
 // ForEach T Generic
+// Apply the fn to T:
+// 		ForEach(T{[]int{1, 2, 3}}, F{func(i int) {
+//			fmt.PrintF("%d\n", i)
+//		}})
 func ForEach(t T, fn F) {
 	t.foreach(fn)
 }
 
 // Map T Generic
+// Apply the transform fn to T and return a new slice:
+// 		Map(T{[]int{1, 2, 3}}, F{Itoa})
+// returns T{} | error
 func Map(t T, fn F) (T, error) {
 	return t.fmap(fn)
 }
 
 // Reduce T Generic
+// Reduces the elements of T by applying fn as an associative binary operator
+//		Reduce(T{0}}, T{[]int{1, 2, 3}}, F{func(acc int, i int) int {
+//			return acc + i
+//		}})
+// returns a single reduced element of wrapped slice in T{} | error
 func Reduce(initial T, t T, fn F) (T, error) {
 	return t.reduce(initial)(fn)
 }
