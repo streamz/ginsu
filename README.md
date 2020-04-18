@@ -1,4 +1,7 @@
 # ginsu
+
+[![CircleCI](https://circleci.com/gh/streamz/ginsu.svg?style=svg)](https://circleci.com/gh/streamz/ginsu)
+
 The ginsu library provides higher order functions for slices.
 
 Unfortunately golang does not support generics :(
