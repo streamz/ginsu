@@ -1,6 +1,7 @@
 # ginsu
 
 [![CircleCI](https://circleci.com/gh/streamz/ginsu.svg?style=svg)](https://circleci.com/gh/streamz/ginsu)
+[![GoDoc](https://godoc.org/github.com/streamz/ginsu?status.svg)](https://godoc.org/github.com/streamz/ginsu)
 
 The ginsu library provides higher order functions for slices.
 
