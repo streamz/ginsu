@@ -18,18 +18,9 @@ package ginsu
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 )
-
-// F container for a function
-//
-// Used to wrap a func variable or literal:
-// 		F{func(p point) bool {
-//			return (p.x == p.y)
-//		}}
-type F struct {
-	I interface{}
-}
 
 // T container for a type
 //
@@ -42,21 +33,42 @@ type T struct {
 	I interface{}
 }
 
+// F container for a function, type alias for T
+//
+// Used to wrap a func variable or literal:
+// 		F{func(p point) bool {
+//			return (p.x == p.y)
+//		}}
+type F = T
+
+
+type _K = []reflect.Kind
+
 type _R struct {
-	I reflect.Kind
-	O reflect.Kind
+	I _K
+	O _K
 }
 
-var rstst = _R{reflect.Struct, reflect.Struct}
-var rstbool = _R{reflect.Struct, reflect.Bool}
-var struct2 = []reflect.Kind{reflect.Struct, reflect.Struct}
+var none = T{}
+var rstst = _R{_K{reflect.Struct}, _K{reflect.Struct}}
+var rstbool = _R{_K{reflect.Struct}, _K{reflect.Bool}}
+var rstunit = _R{_K{reflect.Struct}, _K{}}
+var structstruct = _R{_K{reflect.Struct}, _K{reflect.Struct}}
+var struct2 = _K{reflect.Struct, reflect.Struct}
+
+var invalidfn = "fn is of type %T it is not a function"
+var invalidnin = "invalid arity expected %d in params, received %d"
+var invalidnout = "invalid arity expected %d params, received %d"
+var invalidkin = "invalid input kind param num %d expected %d, received %d"
+var invalidkout = "invalid output kind param num %d expected %d, received %d"
+var invalidslice = "invalid slice received %T"
 
 // Compare T Generic
 // Compare two type T by applying a binary function:
 // 		Compare(T{[]int{1, 2, 3}}, T{[]int{1, 2, 3}}, F{func(i0 int, i1 int) bool {
 //				return i0 == i1
 //		}})
-// returns true|false|runtime error
+// returns (true || false) || error
 func Compare(this T, that T, fn F) (bool, error) {
 	return this.compare(that, fn)
 }
@@ -66,7 +78,7 @@ func Compare(this T, that T, fn F) (bool, error) {
 // 		Filter(T{[]int{1, 2, 3}}, F{func(i int) bool {
 //				return i % 2 == 0
 //		}})
-// returns T{[]int} | runtime error
+// returns T{[]int} || error
 func Filter(t T, fn F) (T, error) {
 	return t.filter(fn, false)
 }
@@ -76,7 +88,7 @@ func Filter(t T, fn F) (T, error) {
 // 		FilterNot(T{[]int{1, 2, 3}}, F{func(i int) bool {
 //				return i % 2 == 0
 //		}})
-// returns T{[]int} | runtime error
+// returns T{[]int} || error
 func FilterNot(t T, fn F) (T, error) {
 	return t.filter(fn, true)
 }
@@ -86,7 +98,7 @@ func FilterNot(t T, fn F) (T, error) {
 // 		ForAll(T{[]int{1, 2, 3}}, F{func(i int) bool {
 //				return i < 10
 //		}})
-// returns true|false|runtime error
+// returns (true || false) || error
 func ForAll(t T, fn F) (bool, error) {
 	return t.foranyall(fn, true)
 }
@@ -96,7 +108,7 @@ func ForAll(t T, fn F) (bool, error) {
 // 		ForAny(T{[]int{1, 2, 3}}, F{func(i int) bool {
 //				return i == 2
 //		}})
-// returns true|false|runtime error
+// returns (true || false) || error
 func ForAny(t T, fn F) (bool, error) {
 	return t.foranyall(fn, false)
 }
@@ -106,14 +118,15 @@ func ForAny(t T, fn F) (bool, error) {
 // 		ForEach(T{[]int{1, 2, 3}}, F{func(i int) {
 //			fmt.PrintF("%d\n", i)
 //		}})
-func ForEach(t T, fn F) {
-	t.foreach(fn)
+// returns error
+func ForEach(t T, fn F) error {
+	return t.foreach(fn)
 }
 
 // Map T Generic
-// Apply the transform fn to T and return a new slice:
-// 		Map(T{[]int{1, 2, 3}}, F{Itoa})
-// returns T{} | error
+// Apply the transform fn to A and return a new slice:
+// 		Map(A{[]int{1, 2, 3}}, F{Itoa})
+// returns B || error
 func Map(t T, fn F) (T, error) {
 	return t.fmap(fn)
 }
@@ -123,57 +136,69 @@ func Map(t T, fn F) (T, error) {
 //		Reduce(T{0}}, T{[]int{1, 2, 3}}, F{func(acc int, i int) int {
 //			return acc + i
 //		}})
-// returns a single reduced element of wrapped slice in T{} | error
+// returns a single reduced element of wrapped slice in T{} || error
 func Reduce(initial T, t T, fn F) (T, error) {
 	return t.reduce(initial)(fn)
 }
 
-func assertArity(t reflect.Type, k []reflect.Kind) bool {
-	if t.NumIn() != len(k) {
-		return false
+func assertslice(t reflect.Type) error {
+	if t.Kind() != reflect.Slice {
+		return fmt.Errorf(invalidslice, t)
+	}
+	return nil
+}
+
+func (fn F) assert(r _R) error {
+	t := reflect.ValueOf(fn.I).Type()
+	if t.Kind() != reflect.Func {
+		return fmt.Errorf(invalidfn, t)
 	}
 
-	for i := 0; i < len(k); i++ {
-		if t.In(i).Kind() != k[i] {
-			return false
+	nin := t.NumIn()
+	enin := len(r.I)
+	if nin != enin {
+		return fmt.Errorf(invalidnin, enin, nin)
+	}
+
+	nout := t.NumOut()
+	enout := len(r.O)
+	if nout != enout {
+		return fmt.Errorf(invalidnout, enout, nout)
+	}
+
+	for i := 0; i < nin; i++ {
+		in := t.In(i).Kind()
+		expect := r.I[i]
+		if in != expect {
+			return fmt.Errorf(invalidkin, i, expect, in)
 		}
 	}
-	return true
-}
 
-func assertIn(t reflect.Type, k reflect.Kind) bool {
-	return (t.NumIn() == 1 && t.In(0).Kind() == k)
-}
+	for i := 0; i < nout; i++ {
+		out := t.Out(i).Kind()
+		expect := r.O[i]
+		if out != expect {
+			return fmt.Errorf(invalidkout, i, expect, out)
+		}
+	}
 
-func assertOut(t reflect.Type, k reflect.Kind) bool {
-	return (t.NumOut() == 1 && t.Out(0).Kind() == k)
-}
-
-func assertfn(t reflect.Type) bool {
-	return (t.Kind() == reflect.Func)
-}
-
-func (fn F) assert(r _R) bool {
-	ft := reflect.ValueOf(fn.I).Type()
-	return (assertfn(ft) &&
-		assertIn(ft, r.I) &&
-		assertOut(ft, r.O))
+	return nil
 }
 
 func (t T) compare(other T, fn F) (bool, error) {
 	this := reflect.ValueOf(t.I)
 	that := reflect.ValueOf(other.I)
 
-	if this.Kind() != reflect.Slice {
-		return false, errors.New("Kind is not a slice")
+	if err := assertslice(this.Type()); err != nil {
+		return false, err
 	}
 
-	val := reflect.ValueOf(fn.I)
-	ft := val.Type()
-	if !assertArity(ft, struct2) || !assertOut(ft, reflect.Bool) {
-		return false, errors.New("Invalid params on predicate")
+	// assert function arity
+	if err := fn.assert(_R{struct2, _K{reflect.Bool}}); err != nil {
+		return false, err
 	}
 
+	// compare len of slices
 	if this.Len() != that.Len() {
 		return false, nil
 	}
@@ -194,12 +219,12 @@ func (t T) compare(other T, fn F) (bool, error) {
 func (t T) filter(fn F, not bool) (T, error) {
 	this := reflect.ValueOf(t.I)
 
-	if this.Kind() != reflect.Slice {
-		return T{}, errors.New("Kind is not a slice")
+	if err := assertslice(this.Type()); err != nil {
+		return none, err
 	}
 
-	if !fn.assert(rstbool) {
-		return T{}, errors.New("Invalid params on predicate")
+	if err := fn.assert(rstbool); err != nil {
+		return none, err
 	}
 
 	f := reflect.ValueOf(fn.I)
@@ -220,12 +245,12 @@ func (t T) filter(fn F, not bool) (T, error) {
 func (t T) foranyall(fn F, all bool) (bool, error) {
 	this := reflect.ValueOf(t.I)
 
-	if this.Kind() != reflect.Slice {
-		return false, errors.New("Kind is not a slice")
+	if err := assertslice(this.Type()); err != nil {
+		return false, err
 	}
 
-	if !fn.assert(rstbool) {
-		return false, errors.New("Invalid params on predicate")
+	if err := fn.assert(rstbool); err != nil {
+		return false, err
 	}
 
 	f := reflect.ValueOf(fn.I)
@@ -244,28 +269,36 @@ func (t T) foranyall(fn F, all bool) (bool, error) {
 	return all, nil
 }
 
-func (t T) foreach(fn F) {
+func (t T) foreach(fn F) error {
 	this := reflect.ValueOf(t.I)
-	rt := reflect.ValueOf(fn.I).Type()
-	if this.Kind() == reflect.Slice && assertfn(rt) && assertIn(rt, reflect.Struct) {
-		f := reflect.ValueOf(fn.I)
-		var p [1]reflect.Value
-		for i := 0; i < this.Len(); i++ {
-			p[0] = this.Index(i)
-			f.Call(p[:])
-		}
+
+	if err := assertslice(this.Type()); err != nil {
+		return err
 	}
+
+	if err := fn.assert(rstunit); err != nil {
+		return err
+	}
+
+	f := reflect.ValueOf(fn.I)
+	var p [1]reflect.Value
+	for i := 0; i < this.Len(); i++ {
+		p[0] = this.Index(i)
+		f.Call(p[:])
+	}
+	
+	return nil
 }
 
 func (t T) fmap(fn F) (T, error) {
 	this := reflect.ValueOf(t.I)
 
-	if this.Kind() != reflect.Slice {
-		return T{}, errors.New("Kind is not a slice")
+	if err := assertslice(this.Type()); err != nil {
+		return none, err
 	}
 
-	if !fn.assert(rstst) {
-		return T{}, errors.New("Invalid params on predicate")
+	if err := fn.assert(structstruct); err != nil {
+		return none, err
 	}
 
 	f := reflect.ValueOf(fn.I)
@@ -287,20 +320,18 @@ func (t T) reduce(initial T) func(fn F) (T, error) {
 		this := reflect.ValueOf(t.I)
 		out := reflect.ValueOf(initial.I)
 
-		if this.Kind() != reflect.Slice {
-			return T{}, errors.New("Kind is not a slice")
+		if err := assertslice(this.Type()); err != nil {
+			return none, err
 		}
-
+	
 		it := this.Type().Elem().Kind()
 		ik := out.Kind()
 		if it != ik {
 			return T{}, errors.New("Type mismatch")
 		}
 
-		val := reflect.ValueOf(fn.I)
-		ft := val.Type()
-		if !assertArity(ft, struct2) || !assertOut(ft, ik) {
-			return T{}, errors.New("Invalid params on predicate")
+		if err := fn.assert(_R{struct2, _K{it}}); err != nil {
+			return none, err
 		}
 
 		var p [2]reflect.Value

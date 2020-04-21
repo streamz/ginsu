@@ -39,7 +39,7 @@ func TestCompare(t *testing.T) {
 		return p0 == p1
 	}})
 
-	if !ok {
+	if !ok || err != nil {
 		t.Errorf(err.Error())
 	}
 }
@@ -56,7 +56,7 @@ func TestCompareNot(t *testing.T) {
 		return p0 == p1
 	}})
 
-	if ok {
+	if ok || err != nil {
 		t.Errorf(err.Error())
 	}
 }
@@ -73,7 +73,7 @@ func TestCompareNotLength(t *testing.T) {
 		return p0 == p1
 	}})
 
-	if ok {
+	if ok || err != nil {
 		t.Errorf(err.Error())
 	}
 }
@@ -95,7 +95,7 @@ func TestFilter(t *testing.T) {
 		return p0 == p1
 	}})
 
-	if !ok {
+	if !ok || err != nil {
 		t.Errorf(err.Error())
 	}
 }
@@ -117,7 +117,7 @@ func TestFilterNot(t *testing.T) {
 		return p0 == p1
 	}})
 
-	if !ok {
+	if !ok || err != nil {
 		t.Errorf(err.Error())
 	}
 }
@@ -129,7 +129,7 @@ func TestForAll(t *testing.T) {
 		return (p.x == p.y)
 	}})
 
-	if !ok {
+	if !ok || err != nil {
 		t.Errorf(err.Error())
 	}
 }
@@ -141,7 +141,7 @@ func TestFailForAll(t *testing.T) {
 		return (p.x == p.y)
 	}})
 
-	if ok {
+	if ok || err != nil {
 		t.Errorf(err.Error())
 	}
 }
@@ -153,7 +153,7 @@ func TestForAny(t *testing.T) {
 		return (p == point{2, 2})
 	}})
 
-	if !ok {
+	if !ok || err != nil {
 		t.Errorf(err.Error())
 	}
 }
@@ -168,7 +168,7 @@ func TestForEach(t *testing.T) {
 
 	res := make([]point, 0, len(td.expect))
 
-	ForEach(T{td.in}, F{func(p point) {
+	err := ForEach(T{td.in}, F{func(p point) {
 		res = append(res, point{p.x * 2, p.y * 2})
 	}})
 
@@ -176,7 +176,7 @@ func TestForEach(t *testing.T) {
 		return p0 == p1
 	}})
 
-	if !ok {
+	if !ok || err != nil {
 		t.Errorf(err.Error())
 	}
 }
@@ -191,7 +191,7 @@ func TestMap(t *testing.T) {
 		{in[3], point{40, 40}},
 	}
 
-	r, _ := Map(T{in}, F{func(p point) line {
+	r, err := Map(T{in}, F{func(p point) line {
 		return line{p, point{p.x * 10, p.y * 10}}
 	}})
 
@@ -205,23 +205,30 @@ func TestMap(t *testing.T) {
 		return l0 == l1
 	}})
 
-	if !ok {
+	if !ok || err != nil {
 		t.Errorf(err.Error())
 	}
 }
 
 func TestReduce(t *testing.T) {
-	err := errors.New("TestReduce Failed")
 	td := []point{{1, 1}, {2, 2}, {3, 3}, {4, 4}}
 	expect := point{10, 10}
 
-	res, _ := Reduce(T{point{0, 0}}, T{td}, F{func(acc point, p point) point {
+	res, err := Reduce(T{point{0, 0}}, T{td}, F{func(acc point, p point) point {
 		return point{acc.x + p.x, acc.y + p.y}
 	}})
+
+	if err != nil {
+		t.Errorf(err.Error())
+	}
 
 	p := res.I.(point)
 
 	if p != expect {
+		t.Errorf("TestReduce Failed")
+	}
+
+	if err != nil {
 		t.Errorf(err.Error())
 	}
 }
@@ -295,11 +302,33 @@ func TestAllBadFn(t *testing.T) {
 		t.Errorf(err.Error())
 	}
 
+	ok, err = ForAll(T{td.in}, F{1})
+
+	if ok {
+		t.Errorf(err.Error())
+	}
+
 	ok, err = ForAll(T{td.in}, F{func(p point) int {
 		return 0
 	}})
 
 	if ok {
+		t.Errorf(err.Error())
+	}
+
+	err = ForEach(T{td.in}, F{func(p point) int {
+		return 0
+	}})
+
+	if err == nil {
+		t.Errorf(err.Error())
+	}
+
+	err = ForEach(T{0}, F{func(p point) int {
+		return 0
+	}})
+
+	if err == nil {
 		t.Errorf(err.Error())
 	}
 
