@@ -1,5 +1,3 @@
-package ginsu
-
 // Copyright 2020 streamz
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +11,7 @@ package ginsu
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+package ginsu
 
 // hof.go Higher Order Functions for golang
 
@@ -50,11 +49,11 @@ type _R struct {
 }
 
 var none = T{}
-var rstst = _R{_K{reflect.Struct}, _K{reflect.Struct}}
-var rstbool = _R{_K{reflect.Struct}, _K{reflect.Bool}}
-var rstunit = _R{_K{reflect.Struct}, _K{}}
-var structstruct = _R{_K{reflect.Struct}, _K{reflect.Struct}}
-var struct2 = _K{reflect.Struct, reflect.Struct}
+//var rstst = _R{_K{reflect.Struct}, _K{reflect.Struct}}
+//var rstbool = _R{_K{reflect.Struct}, _K{reflect.Bool}}
+//var rstunit = _R{_K{reflect.Struct}, _K{}}
+//var structstruct = _R{_K{reflect.Struct}, _K{reflect.Struct}}
+//var struct2 = _K{reflect.Struct, reflect.Struct}
 
 var invalidfn = "fn is of type %T it is not a function"
 var invalidnin = "invalid arity expected %d in params, received %d"
@@ -141,6 +140,10 @@ func Reduce(initial T, t T, fn F) (T, error) {
 	return t.reduce(initial)(fn)
 }
 
+func kindOf(t reflect.Type) reflect.Kind {
+	return t.Elem().Kind()
+}
+
 func assertslice(t reflect.Type) error {
 	if t.Kind() != reflect.Slice {
 		return fmt.Errorf(invalidslice, t)
@@ -194,7 +197,8 @@ func (t T) compare(other T, fn F) (bool, error) {
 	}
 
 	// assert function arity
-	if err := fn.assert(_R{struct2, _K{reflect.Bool}}); err != nil {
+	k := kindOf(this.Type())
+	if err := fn.assert(_R{_K{k, k}, _K{reflect.Bool}}); err != nil {
 		return false, err
 	}
 
@@ -223,7 +227,8 @@ func (t T) filter(fn F, not bool) (T, error) {
 		return none, err
 	}
 
-	if err := fn.assert(rstbool); err != nil {
+	k := kindOf(this.Type())
+	if err := fn.assert(_R{_K{k}, _K{reflect.Bool}}); err != nil {
 		return none, err
 	}
 
@@ -249,7 +254,8 @@ func (t T) foranyall(fn F, all bool) (bool, error) {
 		return false, err
 	}
 
-	if err := fn.assert(rstbool); err != nil {
+	k := kindOf(this.Type())
+	if err := fn.assert(_R{_K{k}, _K{reflect.Bool}}); err != nil {
 		return false, err
 	}
 
@@ -276,7 +282,8 @@ func (t T) foreach(fn F) error {
 		return err
 	}
 
-	if err := fn.assert(rstunit); err != nil {
+	k := kindOf(this.Type())
+	if err := fn.assert(_R{_K{k}, _K{}}); err != nil {
 		return err
 	}
 
@@ -297,7 +304,8 @@ func (t T) fmap(fn F) (T, error) {
 		return none, err
 	}
 
-	if err := fn.assert(structstruct); err != nil {
+	k := kindOf(this.Type())
+	if err := fn.assert(_R{_K{k}, _K{k}}); err != nil {
 		return none, err
 	}
 
@@ -330,7 +338,8 @@ func (t T) reduce(initial T) func(fn F) (T, error) {
 			return T{}, errors.New("Type mismatch")
 		}
 
-		if err := fn.assert(_R{struct2, _K{it}}); err != nil {
+		k := kindOf(this.Type())
+		if err := fn.assert(_R{_K{k, k}, _K{it}}); err != nil {
 			return none, err
 		}
 

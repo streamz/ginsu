@@ -1,4 +1,3 @@
-package ginsu
 
 // Copyright 2020 streamz
 //
@@ -13,6 +12,8 @@ package ginsu
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+package ginsu
 
 import (
 	"errors"
@@ -174,6 +175,41 @@ func TestForEach(t *testing.T) {
 
 	ok, err := Compare(T{res}, T{td.expect}, F{func(p0 point, p1 point) bool {
 		return p0 == p1
+	}})
+
+	if !ok || err != nil {
+		t.Errorf(err.Error())
+	}
+}
+
+func TestForEachPtr(t *testing.T) {
+	in := make([]*point, 0, 4)
+	for i := 0; i < cap(in); i++ {
+		xy := i+1
+		in = append(in, &point{x: xy, y: xy})
+	}
+
+	expect := make([]*point, 0, 4)
+	for i := 0; i < cap(expect); i++ {
+		xy := (i+1)*2
+		expect = append(expect, &point{x: xy, y: xy})
+	}
+
+	td := struct {
+		in, expect []*point
+	}{
+		in, 
+		expect,
+	}
+
+	res := make([]*point, 0, len(td.expect))
+
+	err := ForEach(T{td.in}, F{func(p *point) {
+		res = append(res, &point{p.x * 2, p.y * 2})
+	}})
+
+	ok, err := Compare(T{res}, T{td.expect}, F{func(p0 *point, p1 *point) bool {
+		return *p0 == *p1
 	}})
 
 	if !ok || err != nil {
