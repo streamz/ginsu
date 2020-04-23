@@ -49,12 +49,6 @@ type _R struct {
 }
 
 var none = T{}
-//var rstst = _R{_K{reflect.Struct}, _K{reflect.Struct}}
-//var rstbool = _R{_K{reflect.Struct}, _K{reflect.Bool}}
-//var rstunit = _R{_K{reflect.Struct}, _K{}}
-//var structstruct = _R{_K{reflect.Struct}, _K{reflect.Struct}}
-//var struct2 = _K{reflect.Struct, reflect.Struct}
-
 var invalidfn = "fn is of type %T it is not a function"
 var invalidnin = "invalid arity expected %d in params, received %d"
 var invalidnout = "invalid arity expected %d params, received %d"
