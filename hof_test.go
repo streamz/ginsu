@@ -18,6 +18,7 @@ package ginsu
 import (
 	"errors"
 	"testing"
+	"time"
 )
 
 type point struct {
@@ -26,6 +27,52 @@ type point struct {
 
 type line struct {
 	x, y point
+}
+
+func TestAsyncRepeat(t *testing.T) {
+	e := errors.New("TestAsyncRepeat Failed")
+	count := 0
+	stop := AsyncRepeat(F{func() {
+		if count < 5 {
+			count++
+		}
+	}})
+
+	time.Sleep(1000 * time.Millisecond)
+	stop()
+
+	if count != 5 {
+		t.Errorf(e.Error())
+	}
+}
+
+func TestApply(t *testing.T) {
+	e := errors.New("TestApply Failed")
+	fn, err := Apply(F{func(a int, b int) int {
+		return a + b
+	}}, T{10}, T{10})
+
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	res := fn()
+
+	if res.I.(int) != 20 {
+		t.Errorf(e.Error())
+	}
+}
+
+func TestApplyBadFn(t *testing.T) {
+	e := errors.New("TestApply Failed")
+	fn, err := Apply(F{func(a int, b int) int {
+		return a + b
+	}}, T{10}, T{"10"})
+
+	if err == nil {
+		fn()
+		t.Errorf(e.Error())
+	}
 }
 
 func TestCompare(t *testing.T) {
@@ -246,6 +293,30 @@ func TestMap(t *testing.T) {
 	}
 }
 
+func TestMapX(t *testing.T) {
+	e := errors.New("TestMap Failed")
+	in := []point{{1, 1}, {2, 2}, {3, 3}, {4, 4}}
+	expect := []int{1, 2, 3, 4}
+
+	r, err := Map(T{in}, F{func(p point) int {
+		return p.x
+	}})
+
+	res := r.I.([]int)
+
+	if len(res) != 4 {
+		t.Errorf(e.Error())
+	}
+
+	ok, err := Compare(T{res}, T{expect}, F{func(i0, i1 int) bool {
+		return i0 == i1
+	}})
+
+	if !ok || err != nil {
+		t.Errorf(err.Error())
+	}
+}
+
 func TestReduce(t *testing.T) {
 	td := []point{{1, 1}, {2, 2}, {3, 3}, {4, 4}}
 	expect := point{10, 10}
@@ -376,8 +447,8 @@ func TestAllBadFn(t *testing.T) {
 		t.Errorf(e.Error())
 	}
 
-	_, errT = Map(T{td.in}, F{func(p point) bool {
-		return false
+	_, errT = Map(T{td.in}, F{func(b bool) bool {
+		return b
 	}})
 
 	if errT == nil {

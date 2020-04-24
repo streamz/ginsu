@@ -40,13 +40,16 @@ type T struct {
 //		}}
 type F = T
 
-
 type _K = []reflect.Kind
 
 type _R struct {
 	I _K
 	O _K
 }
+
+type _U = struct{}
+
+type _V = []reflect.Value
 
 var none = T{}
 var invalidfn = "fn is of type %T it is not a function"
@@ -55,6 +58,33 @@ var invalidnout = "invalid arity expected %d params, received %d"
 var invalidkin = "invalid input kind param num %d expected %d, received %d"
 var invalidkout = "invalid output kind param num %d expected %d, received %d"
 var invalidslice = "invalid slice received %T"
+
+// Apply captures args, applies F to T and returns T when result invoked
+// 		f := Apply(F{func(a int, b int) int {
+//				return a + B
+//		}}, T{1}, T{2})
+//		r := f()
+// 		// r == 3
+// returns func()T || error
+func Apply(fn F, args ...T) (func()T, error) {
+	return fn.apply(args...)
+}
+
+// AsyncRepeat executes a Nullary F in a goroutine until result is executed" 
+// 		cancel := AsyncRepeat(F{func() {
+//				// do something
+//		}})
+//		// Stop doing something
+//		cancel()
+func AsyncRepeat(fn F) func() {
+	c := make(chan _U)
+	cancel := func() {
+		close(c)
+	}
+	go fn.until(c)
+
+	return cancel
+}
 
 // Compare T Generic
 // Compare two type T by applying a binary function:
@@ -146,6 +176,10 @@ func assertslice(t reflect.Type) error {
 }
 
 func (fn F) assert(r _R) error {
+	return fn.assertio(r, true)
+}
+
+func (fn F) assertio(r _R, io bool) error {
 	t := reflect.ValueOf(fn.I).Type()
 	if t.Kind() != reflect.Func {
 		return fmt.Errorf(invalidfn, t)
@@ -158,9 +192,11 @@ func (fn F) assert(r _R) error {
 	}
 
 	nout := t.NumOut()
-	enout := len(r.O)
-	if nout != enout {
-		return fmt.Errorf(invalidnout, enout, nout)
+	if io {	
+		enout := len(r.O)
+		if nout != enout {
+			return fmt.Errorf(invalidnout, enout, nout)
+		}
 	}
 
 	for i := 0; i < nin; i++ {
@@ -171,15 +207,68 @@ func (fn F) assert(r _R) error {
 		}
 	}
 
-	for i := 0; i < nout; i++ {
-		out := t.Out(i).Kind()
-		expect := r.O[i]
-		if out != expect {
-			return fmt.Errorf(invalidkout, i, expect, out)
+	if io {
+		for i := 0; i < nout; i++ {
+			out := t.Out(i).Kind()
+			expect := r.O[i]
+			if out != expect {
+				return fmt.Errorf(invalidkout, i, expect, out)
+			}
 		}
 	}
 
 	return nil
+}
+
+func (fn F) apply(args ...T) (func()T, error) {
+	// unwrap args
+	in, _ := T{args}.fmap(F{func(t T) reflect.Value {
+		return reflect.ValueOf(t.I)
+	}})
+
+	ink, _ := in.fmap(F{func(v reflect.Value) reflect.Kind {
+		return v.Kind()
+	}})
+
+	f := reflect.ValueOf(fn.I)
+	t := f.Type()
+
+	outk := make(_K, 0, t.NumOut())
+
+	for i := 0; i < t.NumOut(); i++ {
+		outk = append(outk, t.Out(i).Kind())
+	}
+
+	// this check is redundant for out
+	inkt := ink.I.(_K)
+	if err := fn.assert(_R{inkt, outk}); err != nil {
+		return nil, err
+	}
+
+	res := func() T {
+		inv := in.I.([]reflect.Value)
+		o := f.Call(inv[:])[0].Interface()
+		return T{o}
+	}
+
+	return res, nil
+}
+
+func (fn F) until(c chan _U) {
+	fn.assert(_R{_K{},_K{}})
+	f := reflect.ValueOf(fn.I)
+	running := func(ch chan _U) bool {
+		select {
+		case <-ch:
+			return false
+		default:
+			return true
+		}
+	}
+
+	for running(c) {
+		f.Call(_V{})
+	}
 }
 
 func (t T) compare(other T, fn F) (bool, error) {
@@ -299,7 +388,7 @@ func (t T) fmap(fn F) (T, error) {
 	}
 
 	k := kindOf(this.Type())
-	if err := fn.assert(_R{_K{k}, _K{k}}); err != nil {
+	if err := fn.assertio(_R{_K{k}, _K{}}, false); err != nil {
 		return none, err
 	}
 

@@ -4,7 +4,7 @@
 [![GoDoc](https://godoc.org/github.com/streamz/ginsu?status.svg)](https://godoc.org/github.com/streamz/ginsu)
 [![Go Report Card](https://goreportcard.com/badge/github.com/streamz/ginsu)](https://goreportcard.com/report/github.com/streamz/ginsu)
 
-The ginsu library provides higher order functions for slices.
+The ginsu library provides higher order functions mainly for slices.
 
 Unfortunately golang does not support generics :(
 
@@ -15,6 +15,10 @@ Unfortunately higher order functions require the use of reflection, so they are 
 *supported higer order functions*:
 
 ```golang
+Apply(fn F, args ...T) (func()T, error)
+
+AsyncRepeat(fn F) func()
+
 Compare(t0 T, t1 T, fn F) (bool, error)
 
 Filter(t T, fn F) (T, error)
@@ -35,6 +39,27 @@ Reduce(initial T, t T, fn F) (T, error)
 *Usage:*
 
 ```golang
+    // simple hof(s)
+
+    // Apply
+    fn, _ := Apply(F{func(a int, b int) int {
+		return a + b
+    }}, T{1}, T{1})
+    
+    // res == 2
+    res := fn().I.(int)
+
+    // AsyncRepeat
+    stop := AsyncRepeat(F{func() {
+		// do something
+    }})
+    
+    // stop doing something
+    stop()
+
+
+    // slice hof(s)
+
     type point struct {
         x, y int
     }
