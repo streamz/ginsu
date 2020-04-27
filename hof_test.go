@@ -17,8 +17,8 @@ package ginsu
 
 import (
 	"errors"
+	"sync"
 	"testing"
-	"time"
 )
 
 type point struct {
@@ -32,16 +32,33 @@ type line struct {
 func TestAsyncRepeat(t *testing.T) {
 	e := errors.New("TestAsyncRepeat Failed")
 	count := 0
+	invoked := false
+	
+	var wg0 sync.WaitGroup
+	wg0.Add(1)
+
+	defered := func() {
+		defer wg0.Done()
+		invoked = true
+	}
+
+	var wg1 sync.WaitGroup
+	wg1.Add(5)
+	
 	stop := AsyncRepeat(F{func() {
 		if count < 5 {
 			count++
-		}
-	}})
+			wg1.Done()
+		} 
+	}}, defered)
 
-	time.Sleep(1000 * time.Millisecond)
+	wg1.Wait()
+
 	stop()
 
-	if count != 5 {
+	wg0.Wait()
+
+	if count != 5 || !invoked {
 		t.Errorf(e.Error())
 	}
 }

@@ -73,15 +73,19 @@ func Apply(fn F, args ...T) (func()T, error) {
 // AsyncRepeat executes a Nullary F in a goroutine until result is executed" 
 // 		cancel := AsyncRepeat(F{func() {
 //				// do something
-//		}})
+//		}}, func() {
+//				// defered do something
+//		}) 
 //		// Stop doing something
 //		cancel()
-func AsyncRepeat(fn F) func() {
+func AsyncRepeat(fn F, defered func()) func() {
 	c := make(chan _U)
+	
 	cancel := func() {
 		close(c)
 	}
-	go fn.until(c)
+
+	go fn.until(c, defered)
 
 	return cancel
 }
@@ -254,7 +258,9 @@ func (fn F) apply(args ...T) (func()T, error) {
 	return res, nil
 }
 
-func (fn F) until(c chan _U) {
+func (fn F) until(c chan _U, defered func()) {
+	defer defered()
+
 	fn.assert(_R{_K{},_K{}})
 	f := reflect.ValueOf(fn.I)
 	running := func(ch chan _U) bool {

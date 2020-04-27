@@ -17,7 +17,7 @@ Unfortunately higher order functions require the use of reflection, so they are 
 ```golang
 Apply(fn F, args ...T) (func()T, error)
 
-AsyncRepeat(fn F) func()
+AsyncRepeat(fn F, defered func()) func()
 
 Compare(t0 T, t1 T, fn F) (bool, error)
 
@@ -52,7 +52,9 @@ Reduce(initial T, t T, fn F) (T, error)
     // AsyncRepeat
     stop := AsyncRepeat(F{func() {
 		// do something
-    }})
+    }}, func() {
+        // do something defered
+    })
     
     // stop doing something
     stop()
