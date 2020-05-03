@@ -60,7 +60,7 @@ var invalidkout = "invalid output kind param num %d expected %d, received %d"
 var invalidslice = "invalid slice received %T"
 
 // Apply captures args, applies F to T and returns T when result invoked
-// 		f := Apply(F{func(a int, b int) int {
+// 		f := Apply(F{func(a, b int) int {
 //				return a + B
 //		}}, T{1}, T{2})
 //		r := f()
@@ -96,7 +96,7 @@ func AsyncRepeat(fn F, defered func()) func() {
 //				return i0 == i1
 //		}})
 // returns (true || false) || error
-func Compare(this T, that T, fn F) (bool, error) {
+func Compare(this, that T, fn F) (bool, error) {
 	return this.compare(that, fn)
 }
 
@@ -164,7 +164,7 @@ func Map(t T, fn F) (T, error) {
 //			return acc + i
 //		}})
 // returns a single reduced element of wrapped slice in T{} || error
-func Reduce(initial T, t T, fn F) (T, error) {
+func Reduce(initial, t T, fn F) (T, error) {
 	return t.reduce(initial)(fn)
 }
 
@@ -236,11 +236,11 @@ func (fn F) apply(args ...T) (func()T, error) {
 
 	f := reflect.ValueOf(fn.I)
 	t := f.Type()
+	nout := t.NumOut()
+	outk := make(_K, nout)
 
-	outk := make(_K, 0, t.NumOut())
-
-	for i := 0; i < t.NumOut(); i++ {
-		outk = append(outk, t.Out(i).Kind())
+	for i := 0; i < nout; i++ {
+		outk[i] = t.Out(i).Kind()
 	}
 
 	// this check is redundant for out

@@ -113,10 +113,11 @@ Reduce(initial T, t T, fn F) (T, error)
   
 
     // ForEach
-    res := make([]point, 0, len(td.expect))
-    
+    res := make([]point, len(td.expect))
+    idx := 0
     ForEach(T{td.in}, F{func(p point) {
-        res = append(res, point{p.x*2, p.y*2})
+        res[idx] = point{p.x*2, p.y*2}
+        idx++
     }})
   
     result := res.I.([]point)
