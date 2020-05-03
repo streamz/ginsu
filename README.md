@@ -19,7 +19,7 @@ Apply(fn F, args ...T) (func()T, error)
 
 AsyncRepeat(fn F, defered func()) func()
 
-Compare(t0 T, t1 T, fn F) (bool, error)
+Compare(t0, t1 T, fn F) (bool, error)
 
 Filter(t T, fn F) (T, error)
 
@@ -33,7 +33,7 @@ ForEach(t T, fn F)
 
 Map(t T, fn F) (T, error)
 
-Reduce(initial T, t T, fn F) (T, error)
+Reduce(initial, t T, fn F) (T, error)
 ```
 
 *Usage:*
@@ -42,7 +42,7 @@ Reduce(initial T, t T, fn F) (T, error)
     // simple hof(s)
 
     // Apply
-    fn, _ := Apply(F{func(a int, b int) int {
+    fn, _ := Apply(F{func(a, b int) int {
 		return a + b
     }}, T{1}, T{1})
     
@@ -79,7 +79,7 @@ Reduce(initial T, t T, fn F) (T, error)
     
 
     // Compare
-    ok, err := Compare(T{td.in}, T{td.expect}, F{func(p0 point, p1 point) bool {
+    ok, err := Compare(T{td.in}, T{td.expect}, F{func(p0, p1 point) bool {
         return p0 == p1
     }})
 
@@ -132,7 +132,7 @@ Reduce(initial T, t T, fn F) (T, error)
 
 
     // Reduce
-    res, _ := Reduce(T{point{0,0}}, T{td}, F{func(acc point, p point) point {
+    res, _ := Reduce(T{point{0,0}}, T{td}, F{func(acc, p point) point {
         return point{acc.x + p.x, acc.y + p.y}
     }})
     
