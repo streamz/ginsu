@@ -43,7 +43,7 @@ Reduce(initial, t T, fn F) (T, error)
 
     // Apply
     fn, _ := Apply(F{func(a, b int) int {
-		return a + b
+	return a + b
     }}, T{1}, T{1})
     
     // res == 2
@@ -51,7 +51,7 @@ Reduce(initial, t T, fn F) (T, error)
 
     // AsyncRepeat
     stop := AsyncRepeat(F{func() {
-		// do something
+	// do something
     }}, func() {
         // do something defered
     })
